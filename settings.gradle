@@ -1,0 +1,6 @@
+include 'apps:delay-service'
+include 'apps:blocking-app'
+include 'apps:reactive-app'
+include 'apps:reactive-cats'
+include 'apps:reactive-akka'
+include 'apps:load-test'

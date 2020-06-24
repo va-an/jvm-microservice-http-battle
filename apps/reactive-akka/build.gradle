@@ -1,0 +1,46 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
+plugins {
+  id 'scala'
+  id "com.github.johnrengelman.shadow" version "6.0.0"
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+def scalaVersion = "2.13.2"
+def akkaHttpVersion = "10.1.12"
+def akkaStreamVersion = "2.6.6"
+
+dependencies {
+  // scala lang
+  implementation 'org.scala-lang:scala-library:' + scalaVersion
+  implementation 'org.scala-lang:scala-compiler:' + scalaVersion
+
+  // akka
+  implementation 'com.typesafe.akka:akka-http_2.13:' + akkaHttpVersion
+  implementation 'com.typesafe.akka:akka-stream_2.13:' + akkaStreamVersion
+}
+
+shadowJar {
+  archiveBaseName = 'reactive-akka'
+  classifier = ''
+  archiveVersion = ''
+
+  transform(AppendingTransformer) {
+    resource = 'reference.conf'
+  } with jar
+}
+
+jar {
+  manifest {
+    attributes(
+            'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+            'Main-Class': 'io.vaan.httpbattle.reactiveakka.ReactiveAkka'
+    )
+  }
+}
