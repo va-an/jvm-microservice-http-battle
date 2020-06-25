@@ -11,11 +11,13 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object ReactiveCats extends IOApp {
-  private val DELAY_SERVICE_URL = "http://localhost:8080";
+  private val PORT = 8083
+  private val DELAY_SERVICE_URL = "http://localhost:8080"
+  private val httpClient = BlazeClientBuilder[IO](global).resource
 
   private val httpApp = HttpRoutes.of[IO] {
     case GET -> Root / delayMillis =>
-      BlazeClientBuilder[IO](global).resource.use { client =>
+      httpClient.use { client =>
         client
           .expect[String](s"$DELAY_SERVICE_URL/$delayMillis")
           .flatMap(response => Ok(s"ReactiveCats: $response"))
@@ -24,7 +26,7 @@ object ReactiveCats extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO](global)
-      .bindHttp(port = 8083, host = "localhost")
+      .bindHttp(port = PORT, host = "localhost")
       .withHttpApp(httpApp)
       .serve
       .compile

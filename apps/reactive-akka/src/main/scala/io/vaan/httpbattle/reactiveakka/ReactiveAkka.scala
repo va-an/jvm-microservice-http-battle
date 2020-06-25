@@ -1,7 +1,7 @@
 package io.vaan.httpbattle.reactiveakka
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -15,14 +15,15 @@ object ReactiveAkka {
   private val PORT = 8084
   private val DELAY_SERVICE_URL = "http://localhost:8080";
 
-  implicit val system: ActorSystem = ActorSystem("my-system")
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+  private implicit val system: ActorSystem = ActorSystem("my-system")
+  private implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+  private val httpClient: HttpExt = Http()
 
   def main(args: Array[String]) {
     val route: Route =
       pathPrefix(Segment) { delayMillis =>
         get {
-          val response: Future[HttpResponse] = Http()
+          val response: Future[HttpResponse] = httpClient
             .singleRequest(HttpRequest(uri = s"$DELAY_SERVICE_URL/$delayMillis"))
 
           response.onComplete {
