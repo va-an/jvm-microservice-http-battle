@@ -19,7 +19,7 @@ object ReactiveAkka {
   private implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   private val httpClient: HttpExt = Http()
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val route: Route =
       pathPrefix(Segment) { delayMillis =>
         get {
