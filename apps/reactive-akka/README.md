@@ -13,7 +13,6 @@ $ java -jar \
   -Xmx512m \
   -Djava.net.preferIPv4Stack=true \
   -Djava.net.preferIPv6Addresses=false \
-  -Dspring.output.ansi.enabled=ALWAYS \
   apps/reactive-akka/build/libs/reactive-akka.jar
 ```
 ---

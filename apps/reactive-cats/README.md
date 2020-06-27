@@ -13,7 +13,6 @@ $ java -jar \
   -Xmx512m \
   -Djava.net.preferIPv4Stack=true \
   -Djava.net.preferIPv6Addresses=false \
-  -Dspring.output.ansi.enabled=ALWAYS \
   apps/reactive-cats/build/libs/reactive-cats.jar
 ```
 ---
