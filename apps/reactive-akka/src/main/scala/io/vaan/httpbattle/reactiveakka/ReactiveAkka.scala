@@ -5,8 +5,9 @@ import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.unmarshalling.Unmarshal
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
@@ -23,15 +24,11 @@ object ReactiveAkka {
     val route: Route =
       pathPrefix(Segment) { delayMillis =>
         get {
-          val response: Future[HttpResponse] = httpClient
-            .singleRequest(HttpRequest(uri = s"$DELAY_SERVICE_URL/$delayMillis"))
-
-          response.onComplete {
-            case Success(response) => println(s"ReactiveAkka: $response")
-            case Failure(exception) => sys.error(exception.toString)
-          }
-
-          complete(response)
+          complete (for {
+            response <- httpClient.singleRequest(HttpRequest(uri = s"$DELAY_SERVICE_URL/$delayMillis"))
+            responseText <- Unmarshal(response.entity).to[String]
+            responseWithText = HttpResponse(status = StatusCodes.OK, entity = s"ReactiveAkka: $responseText")
+          } yield responseWithText)
         }
       }
 
