@@ -9,8 +9,6 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
-import scala.util.{Failure, Success}
-
 
 object ReactiveAkka {
   private val PORT = 8084
