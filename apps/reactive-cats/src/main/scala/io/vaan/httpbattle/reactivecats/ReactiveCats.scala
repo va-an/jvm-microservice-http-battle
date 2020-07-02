@@ -1,12 +1,13 @@
 package io.vaan.httpbattle.reactivecats
 
-import java.util.concurrent.{ExecutorService, Executors}
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import java.util.concurrent.Executors.newFixedThreadPool
 
+import cats.data.Kleisli
 import cats.effect.IO
 import cats.effect._
 import org.http4s._
-import org.http4s.client.JavaNetClientBuilder
+import org.http4s.client.{Client, JavaNetClientBuilder}
 import org.http4s.implicits._
 import org.http4s.dsl.io._
 import org.http4s.client.blaze._
@@ -15,33 +16,45 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, ExecutionContextExecutorService}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object ReactiveCats extends IOApp {
+object ReactiveCats extends IOApp.WithContext {
   private val PORT = 8083
   private val DELAY_SERVICE_URL = "http://localhost:8080"
 
-  val clientPool: ExecutorService = Executors.newFixedThreadPool(64)
-  val clientExecutor: ExecutionContextExecutor = ExecutionContext.fromExecutor(clientPool)
+  override protected def executionContextResource: Resource[SyncIO, ExecutionContext] = {
+    Resource.make(SyncIO(Executors.newFixedThreadPool(8)))(pool => SyncIO {
+      pool.shutdown()
+      pool.awaitTermination(10, TimeUnit.SECONDS)
+    }).map(ExecutionContext.fromExecutorService)
+  }
 
-  private val httpClient = BlazeClientBuilder[IO](clientExecutor).resource
+  private val clientPool: Resource[IO, ExecutorService] =
+    Resource.make(IO(Executors.newFixedThreadPool(64)))(ex => IO(ex.shutdown()))
 
-  private val httpApp = HttpRoutes.of[IO] {
+  private val clientExecutor: Resource[IO, ExecutionContextExecutor] =
+    clientPool.map(ExecutionContext.fromExecutor)
+
+  private val httpClient = clientExecutor.flatMap(ex => BlazeClientBuilder[IO](ex).resource)
+
+  private def httpApp(client: Client[IO]): Kleisli[IO, Request[IO], Response[IO]] = HttpRoutes.of[IO] {
     case GET -> Root / delayMillis =>
-      httpClient.use { client =>
-        client
-          .expect[String](s"$DELAY_SERVICE_URL/$delayMillis")
-          .flatMap(response => Ok(s"ReactiveCats: $response"))
-      }
+      client
+        .expect[String](s"$DELAY_SERVICE_URL/$delayMillis")
+        .flatMap(response => Ok(s"ReactiveCats: $response"))
   }.orNotFound
 
-  val serverPool: ExecutorService = Executors.newFixedThreadPool(64)
-  val serverExecutor: ExecutionContextExecutor = ExecutionContext.fromExecutor(serverPool)
+  override def run(args: List[String]): IO[ExitCode] = {
+    val serverPool: ExecutorService = Executors.newFixedThreadPool(64)
+    val serverExecutor: ExecutionContextExecutor = ExecutionContext.fromExecutor(serverPool)
 
-  override def run(args: List[String]): IO[ExitCode] =
-    BlazeServerBuilder[IO](serverExecutor)
-      .bindHttp(port = PORT, host = "localhost")
-      .withHttpApp(httpApp)
-      .serve
-      .compile
-      .drain
-      .as(ExitCode.Success)
+    httpClient.use { client =>
+      BlazeServerBuilder[IO](serverExecutor)
+        .bindHttp(port = PORT, host = "192.168.1.65")
+        .withHttpApp(httpApp(client))
+        .serve
+        .compile
+        .drain
+        .as(ExitCode.Success)
+    }
+  }
+
 }
