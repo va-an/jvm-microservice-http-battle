@@ -16,16 +16,9 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, ExecutionContextExecutorService}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object ReactiveCats extends IOApp.WithContext {
+object ReactiveCats extends IOApp {
   private val PORT = 8083
   private val DELAY_SERVICE_URL = "http://localhost:8080"
-
-  override protected def executionContextResource: Resource[SyncIO, ExecutionContext] = {
-    Resource.make(SyncIO(Executors.newFixedThreadPool(8)))(pool => SyncIO {
-      pool.shutdown()
-      pool.awaitTermination(10, TimeUnit.SECONDS)
-    }).map(ExecutionContext.fromExecutorService)
-  }
 
   private val clientPool: Resource[IO, ExecutorService] =
     Resource.make(IO(Executors.newFixedThreadPool(64)))(ex => IO(ex.shutdown()))
@@ -48,7 +41,7 @@ object ReactiveCats extends IOApp.WithContext {
 
     httpClient.use { client =>
       BlazeServerBuilder[IO](serverExecutor)
-        .bindHttp(port = PORT, host = "192.168.1.65")
+        .bindHttp(port = PORT, host = "localhost")
         .withHttpApp(httpApp(client))
         .serve
         .compile
@@ -56,5 +49,4 @@ object ReactiveCats extends IOApp.WithContext {
         .as(ExitCode.Success)
     }
   }
-
 }
