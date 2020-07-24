@@ -14,7 +14,7 @@ repositories {
 
 def scalaVersion = "2.13.2"
 def akkaHttpVersion = "10.1.12"
-def akkaStreamVersion = "2.6.6"
+def akkaStreamVersion = "2.6.8"
 
 dependencies {
   // scala lang
