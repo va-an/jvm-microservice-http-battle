@@ -33,8 +33,9 @@ object Main extends IOApp {
         .withConnectTimeout(60 seconds)
         .withRequestTimeout(60 seconds)
         .withResponseHeaderTimeout(60 seconds)
-        .withMaxTotalConnections(1024)
-        .withMaxWaitQueueLimit(1024)
+        .withIdleTimeout(100 seconds)
+        .withMaxTotalConnections(10_000)
+        .withMaxWaitQueueLimit(10_000)
         .resource
     )
 
@@ -54,8 +55,9 @@ object Main extends IOApp {
       BlazeServerBuilder[IO](ExecutionContext.global)
         .bindHttp(port = PORT, host = "localhost")
         .withHttpApp(httpApp(client))
-        .withMaxConnections(2048)
+        .withMaxConnections(10_000)
         .withResponseHeaderTimeout(60 seconds)
+        .withIdleTimeout(120 seconds)
         .serve
         .compile
         .drain

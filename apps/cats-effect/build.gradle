@@ -10,10 +10,10 @@ repositories {
   mavenCentral()
 }
 
-def scalaVersion = "2.13.2"
-def http4sVersion = "0.21.22"
-def catsEffectVersion = "2.1.3"
-def scalaLoggingVersion = "3.9.2"
+def scalaVersion = "2.13.5"
+def http4sVersion = "1.0.0-M21"
+def catsEffectVersion = "3.0.2"
+def log4cats = "2.0.1"
 def logbackClassicVersion = "1.2.3"
 
 dependencies {
@@ -30,7 +30,7 @@ dependencies {
   implementation 'org.http4s:http4s-blaze-client_2.13:' + http4sVersion
 
   // logging
-  implementation 'com.typesafe.scala-logging:scala-logging_2.13:' + scalaLoggingVersion
+  implementation 'org.typelevel:log4cats-core_2.13:' + log4cats
   implementation 'ch.qos.logback:logback-classic:' + logbackClassicVersion
 }
 
