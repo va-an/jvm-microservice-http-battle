@@ -8,7 +8,7 @@ All apps used HTTP/1.1 for a server and client.
 Fighters:
 * Java + Spring Web (blocking-app)
 * Java + Spring Reactive Web (reactive-app)
-* Scala + http4s (reactive-cats)
+* Scala + http4s (cats-effect)
 * Scala + Akka HTTP (reactive-akka)
 
 Referees:

@@ -1,7 +1,7 @@
 include 'apps:delay-service'
 include 'apps:blocking-app'
 include 'apps:reactive-app'
-include 'apps:reactive-cats'
+include 'apps:cats-effect'
 include 'apps:reactive-akka'
 include 'apps:ktor'
 include 'apps:load-test'

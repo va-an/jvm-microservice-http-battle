@@ -1,8 +1,7 @@
-package io.vaan.httpbattle.reactivecats
+package io.vaan.httpbattle.catseffect
 
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import java.util.concurrent.Executors.newFixedThreadPool
-
 import cats.data.Kleisli
 import cats.effect.IO
 import cats.effect._
@@ -13,10 +12,12 @@ import org.http4s.dsl.io._
 import org.http4s.client.blaze._
 import org.http4s.server.blaze.BlazeServerBuilder
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, ExecutionContextExecutorService}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.postfixOps
 
-object ReactiveCats extends IOApp {
+object Main extends IOApp {
   private val PORT = 8083
   private val DELAY_SERVICE_URL = "http://localhost:8080"
 
@@ -26,23 +27,35 @@ object ReactiveCats extends IOApp {
   private val clientExecutor: Resource[IO, ExecutionContextExecutor] =
     clientPool.map(ExecutionContext.fromExecutor)
 
-  private val httpClient = clientExecutor.flatMap(ex => BlazeClientBuilder[IO](ex).resource)
+  private val httpClient =
+    clientExecutor.flatMap(ex =>
+      BlazeClientBuilder[IO](ex)
+        .withConnectTimeout(60 seconds)
+        .withRequestTimeout(60 seconds)
+        .withResponseHeaderTimeout(60 seconds)
+        .withMaxTotalConnections(1024)
+        .withMaxWaitQueueLimit(1024)
+        .resource
+    )
 
-  private def httpApp(client: Client[IO]): Kleisli[IO, Request[IO], Response[IO]] = HttpRoutes.of[IO] {
-    case GET -> Root / delayMillis =>
+  private def httpApp(
+      client: Client[IO]
+  ): Kleisli[IO, Request[IO], Response[IO]] = HttpRoutes
+    .of[IO] { case GET -> Root / delayMillis =>
       client
         .expect[String](s"$DELAY_SERVICE_URL/$delayMillis")
         .flatMap(response => Ok(s"ReactiveCats: $response"))
-  }.orNotFound
+        .timeout(30 seconds)
+    }
+    .orNotFound
 
   override def run(args: List[String]): IO[ExitCode] = {
-    val serverPool: ExecutorService = Executors.newFixedThreadPool(64)
-    val serverExecutor: ExecutionContextExecutor = ExecutionContext.fromExecutor(serverPool)
-
     httpClient.use { client =>
-      BlazeServerBuilder[IO](serverExecutor)
+      BlazeServerBuilder[IO](ExecutionContext.global)
         .bindHttp(port = PORT, host = "localhost")
         .withHttpApp(httpApp(client))
+        .withMaxConnections(2048)
+        .withResponseHeaderTimeout(60 seconds)
         .serve
         .compile
         .drain

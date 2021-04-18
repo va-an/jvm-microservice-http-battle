@@ -1,7 +1,7 @@
 How to build:
 
 ```shell script
-$ ./gradlew -p apps/reactive-cats clean shadowJar
+$ ./gradlew -p apps/cats-effect clean shadowJar
 ```
 ---
 
@@ -13,7 +13,7 @@ $ java -jar \
   -Xmx512m \
   -Djava.net.preferIPv4Stack=true \
   -Djava.net.preferIPv6Addresses=false \
-  apps/reactive-cats/build/libs/reactive-cats.jar
+  apps/cats-effect/build/libs/cats-effect.jar
 ```
 ---
 
